@@ -10,35 +10,7 @@ import type { Request, Response } from 'express';
 import { hostHeaderValidation } from '@modelcontextprotocol/express';
 import { McpServerService } from './mcp-server.service.js';
 import { OAuth2Service } from './oauth.service.js';
-
-const ALLOWED_MCP_HOSTS = [
-  'localhost',
-  '127.0.0.1',
-  '[::1]',
-  'backend.josedaniel.online',
-];
-
-if (process.env.MCP_ALLOWED_HOSTS) {
-  for (const host of process.env.MCP_ALLOWED_HOSTS.split(',')) {
-    const cleanHost = host
-      .trim()
-      .replace(/^https?:\/\//, '')
-      .split('/')[0]
-      .split(':')[0];
-    if (cleanHost && !ALLOWED_MCP_HOSTS.includes(cleanHost)) {
-      ALLOWED_MCP_HOSTS.push(cleanHost);
-    }
-  }
-}
-
-if (process.env.BASE_URL) {
-  try {
-    const parsed = new URL(process.env.BASE_URL);
-    if (parsed.hostname && !ALLOWED_MCP_HOSTS.includes(parsed.hostname)) {
-      ALLOWED_MCP_HOSTS.push(parsed.hostname);
-    }
-  } catch {}
-}
+import { appConfig } from '../config/env.config.js';
 
 interface AuthenticatedRequest extends Request {
   user?: unknown;
@@ -47,7 +19,7 @@ interface AuthenticatedRequest extends Request {
 @Controller('mcp')
 export class McpController {
   private readonly logger = new Logger(McpController.name);
-  private readonly validateHost = hostHeaderValidation(ALLOWED_MCP_HOSTS);
+  private readonly validateHost = hostHeaderValidation(appConfig.mcpAllowedHosts);
 
   constructor(
     private readonly mcpServerService: McpServerService,

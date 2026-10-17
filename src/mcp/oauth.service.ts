@@ -10,11 +10,11 @@ import {
   OAuthClient,
   AuthorizationCodeGrant,
 } from './oauth.types.js';
+import { appConfig } from '../config/env.config.js';
 
 @Injectable()
 export class OAuth2Service {
-  private readonly jwtSecret =
-    process.env.JWT_SECRET || 'nexus_super_secret_jwt_key_2025';
+  private readonly jwtSecret = appConfig.jwtSecretOauth;
   private readonly clients = new Map<string, OAuthClient>();
   private readonly authCodes = new Map<string, AuthorizationCodeGrant>();
 

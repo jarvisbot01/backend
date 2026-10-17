@@ -2,29 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { appConfig } from './config/env.config.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
 
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'https://frontend.josedaniel.online',
-  ];
-
-  if (
-    process.env.FRONTEND_URL &&
-    !allowedOrigins.includes(process.env.FRONTEND_URL)
-  ) {
-    allowedOrigins.push(process.env.FRONTEND_URL);
-  }
-
   app.enableCors({
-    origin: allowedOrigins,
+    origin: appConfig.corsAllowedOrigins,
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -47,7 +33,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+  const port = appConfig.port;
   await app.listen(port);
   console.log(`🚀 Backend NestJS escuchando en http://localhost:${port}`);
   console.log(

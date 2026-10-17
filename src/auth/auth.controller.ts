@@ -14,8 +14,10 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { LoginDto, RegisterDto, LoginSchema } from './dto.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { appConfig } from '../config/env.config.js';
 
 const COOKIE_NAME = 'nexus_refresh_token';
+const isProduction = appConfig.nodeEnv === 'production';
 
 @ApiTags('Auth')
 @Controller('api/auth')
@@ -43,7 +45,7 @@ export class AuthController {
 
     res.cookie(COOKIE_NAME, refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       path: '/api/auth',
       maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -97,7 +99,7 @@ export class AuthController {
 
     res.cookie(COOKIE_NAME, refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       path: '/api/auth',
       maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -123,7 +125,7 @@ export class AuthController {
 
     res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       path: '/api/auth',
     });

@@ -3,12 +3,12 @@ import type { Request } from 'express';
 import { DrizzleService } from '../db/drizzle.service.js';
 import * as schema from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { appConfig } from '../config/env.config.js';
 
 @Injectable()
 export class OpenApiService {
   private readonly logger = new Logger(OpenApiService.name);
-  private readonly apiKey =
-    process.env.OPENAPI_API_KEY || 'test_openapi_sandbox_key';
+  private readonly apiKey = appConfig.openapiApiKey;
   private readonly baseUrl = 'https://api.openapi.com/v1';
 
   constructor(private readonly drizzle: DrizzleService) {}
@@ -156,10 +156,8 @@ export class OpenApiService {
       ? new Date(invoice.issuedAt).toLocaleDateString()
       : new Date().toLocaleDateString();
 
-    let panelUrl = 'http://localhost:3001/#sales';
-    if (process.env.FRONTEND_URL) {
-      panelUrl = `${process.env.FRONTEND_URL.replace(/\/+$/, '')}/#sales`;
-    } else if (req) {
+    let panelUrl = `${appConfig.frontendUrl.replace(/\/+$/, '')}/#sales`;
+    if (req) {
       const host = req.headers['x-forwarded-host'] || req.headers['host'];
       const proto =
         req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');

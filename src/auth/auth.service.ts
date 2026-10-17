@@ -9,11 +9,10 @@ import { eq, and, gt } from 'drizzle-orm';
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { appConfig } from '../config/env.config.js';
 
-const JWT_ACCESS_SECRET =
-  process.env.JWT_ACCESS_SECRET || 'nexus_super_access_secret_key_2026_xyz';
-const JWT_REFRESH_HMAC_SECRET =
-  process.env.JWT_REFRESH_HMAC_SECRET || 'nexus_refresh_hmac_secret_key_9988_abc';
+const JWT_ACCESS_SECRET = appConfig.jwtAccessSecret;
+const JWT_REFRESH_HMAC_SECRET = appConfig.jwtRefreshHmacSecret;
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_DAYS = 7;
 

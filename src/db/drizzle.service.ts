@@ -6,8 +6,7 @@ import path from 'node:path';
 import pkg from 'pg';
 const { Pool } = pkg;
 import * as schema from './schema.js';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { appConfig } from '../config/env.config.js';
 
 export const DRIZZLE = 'DRIZZLE_DATABASE';
 
@@ -18,9 +17,7 @@ export class DrizzleService implements OnModuleInit, OnModuleDestroy {
   private readonly pool: pkg.Pool;
 
   constructor() {
-    const connectionString =
-      process.env.DATABASE_URL ||
-      'postgresql://postgres:postgrespassword@localhost:5432/ecommerce_ventas';
+    const connectionString = appConfig.databaseUrl;
 
     this.pool = new Pool({
       connectionString,

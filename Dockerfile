@@ -3,7 +3,7 @@
 # ==========================================
 
 # 1. Builder Stage
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 
 RUN apk add --no-cache python3 make g++
@@ -22,7 +22,7 @@ COPY drizzle/ ./drizzle/
 RUN npm run build
 
 # 2. Production Runner Stage
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache tini curl

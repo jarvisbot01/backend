@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { DrizzleService } from '../db/drizzle.service.js';
 import * as schema from '../db/schema.js';
-import { eq, desc, ilike, or } from 'drizzle-orm';
+import { eq, desc, ilike, or, and } from 'drizzle-orm';
 import { CreateProductDto, UpdateProductDto } from './dto.js';
 
 @Injectable()
@@ -13,31 +13,30 @@ export class ProductsService {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async findAll(search?: string, categoryId?: number) {
+    const conditions = [];
+
     if (search) {
-      return this.drizzle.db
-        .select()
-        .from(schema.products)
-        .where(
-          or(
-            ilike(schema.products.name, `%${search}%`),
-            ilike(schema.products.sku, `%${search}%`),
-          ),
-        )
-        .orderBy(desc(schema.products.createdAt));
+      conditions.push(
+        or(
+          ilike(schema.products.name, `%${search}%`),
+          ilike(schema.products.sku, `%${search}%`),
+        ),
+      );
     }
 
     if (categoryId) {
-      return this.drizzle.db
-        .select()
-        .from(schema.products)
-        .where(eq(schema.products.categoryId, categoryId))
+      conditions.push(eq(schema.products.categoryId, categoryId));
+    }
+
+    const query = this.drizzle.db.select().from(schema.products);
+
+    if (conditions.length > 0) {
+      return query
+        .where(and(...conditions))
         .orderBy(desc(schema.products.createdAt));
     }
 
-    return this.drizzle.db
-      .select()
-      .from(schema.products)
-      .orderBy(desc(schema.products.createdAt));
+    return query.orderBy(desc(schema.products.createdAt));
   }
 
   async findOne(id: number) {

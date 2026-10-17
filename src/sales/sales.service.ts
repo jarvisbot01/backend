@@ -19,20 +19,27 @@ export class SalesService {
       .orderBy(desc(schema.orders.createdAt))
       .limit(limit);
 
-    const ordersWithItems = await Promise.all(
-      ordersList.map(async (order) => {
-        const items = await this.drizzle.db
-          .select()
-          .from(schema.orderItems)
-          .where(eq(schema.orderItems.orderId, order.id));
-        return {
-          ...order,
-          items,
-        };
-      }),
-    );
+    if (ordersList.length === 0) {
+      return [];
+    }
 
-    return ordersWithItems;
+    const orderIds = ordersList.map((o) => o.id);
+    const allItems = await this.drizzle.db
+      .select()
+      .from(schema.orderItems)
+      .where(inArray(schema.orderItems.orderId, orderIds));
+
+    const itemsByOrderId = new Map<number, (typeof allItems)[number][]>();
+    for (const item of allItems) {
+      const existing = itemsByOrderId.get(item.orderId) || [];
+      existing.push(item);
+      itemsByOrderId.set(item.orderId, existing);
+    }
+
+    return ordersList.map((order) => ({
+      ...order,
+      items: itemsByOrderId.get(order.id) || [],
+    }));
   }
 
   async findOne(id: number) {
