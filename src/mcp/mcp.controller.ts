@@ -28,6 +28,10 @@ export class McpController {
 
   @All()
   async handleMcpStream(@Req() req: AuthenticatedRequest, @Res() res: Response) {
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+
     this.validateHost(req, res, () => {});
     if (res.headersSent) {
       return;
@@ -36,6 +40,9 @@ export class McpController {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       const issuer = `${req.protocol}://${req.get('host') || 'localhost:4000'}`;
+      this.logger.log(
+        `MCP Stream challenge [${req.method}] from ${req.ip || 'unknown'} - Requesting Bearer token with WWW-Authenticate`,
+      );
       res.setHeader(
         'WWW-Authenticate',
         `Bearer realm="Nexus MCP", error="invalid_token", error_description="The access token is required", resource_metadata="${issuer}/.well-known/oauth-protected-resource"`,

@@ -42,31 +42,57 @@ export class OAuth2Service {
     dto: DynamicClientRegistrationDto,
     customId?: string,
   ): OAuthClient {
+    const redirectUris = dto.redirect_uris || dto.redirectUris;
     if (
-      !dto.redirect_uris ||
-      !Array.isArray(dto.redirect_uris) ||
-      dto.redirect_uris.length === 0
+      !redirectUris ||
+      !Array.isArray(redirectUris) ||
+      redirectUris.length === 0
     ) {
       throw new BadRequestException('redirect_uris array is required');
     }
 
     const clientId = customId || `client_${crypto.randomUUID()}`;
-    const tokenAuthMethod = dto.token_endpoint_auth_method || 'none';
+    const tokenAuthMethod =
+      dto.token_endpoint_auth_method ||
+      dto.tokenEndpointAuthMethod ||
+      'none';
     const clientSecret =
       tokenAuthMethod !== 'none'
         ? crypto.randomBytes(32).toString('hex')
         : undefined;
 
+    const clientName = dto.client_name || dto.clientName || 'Dynamic MCP Client';
+    const grantTypes = dto.grant_types || dto.grantTypes || ['authorization_code'];
+    const responseTypes = dto.response_types || dto.responseTypes || ['code'];
+    const scope = dto.scope || 'mcp:read mcp:write';
+    const createdAt = Date.now();
+
     const client: OAuthClient = {
+      // RFC 7591 snake_case fields
+      client_id: clientId,
+      ...(clientSecret
+        ? {
+            client_secret: clientSecret,
+            client_secret_expires_at: 0,
+          }
+        : {}),
+      client_name: clientName,
+      redirect_uris: redirectUris,
+      grant_types: grantTypes,
+      response_types: responseTypes,
+      token_endpoint_auth_method: tokenAuthMethod,
+      scope,
+      client_id_issued_at: Math.floor(createdAt / 1000),
+
+      // Internal camelCase fields
       clientId,
       clientSecret,
-      clientName: dto.client_name || 'Dynamic MCP Client',
-      redirectUris: dto.redirect_uris,
-      grantTypes: dto.grant_types || ['authorization_code'],
-      responseTypes: dto.response_types || ['code'],
+      clientName,
+      redirectUris,
+      grantTypes,
+      responseTypes,
       tokenEndpointAuthMethod: tokenAuthMethod,
-      scope: dto.scope || 'mcp:read mcp:write',
-      createdAt: Date.now(),
+      createdAt,
     };
 
     this.clients.set(clientId, client);
@@ -97,9 +123,9 @@ export class OAuth2Service {
       try {
         const parsed = new URL(uri);
         return (
-          (parsed.hostname === 'localhost' ||
-            parsed.hostname === '127.0.0.1') &&
-          parsed.pathname === '/oauth/callback'
+          parsed.hostname === 'localhost' ||
+          parsed.hostname === '127.0.0.1' ||
+          parsed.hostname === '::1'
         );
       } catch {
         return false;
@@ -108,6 +134,7 @@ export class OAuth2Service {
 
     const isAllowedRedirect =
       client.redirectUris.includes(params.redirectUri) ||
+      client.redirect_uris?.includes(params.redirectUri) ||
       isLocalhostUri(params.redirectUri);
 
     if (!isAllowedRedirect) {

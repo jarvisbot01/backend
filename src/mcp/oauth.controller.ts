@@ -9,6 +9,7 @@ import {
   HttpStatus,
   HttpCode,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { OAuth2Service } from './oauth.service.js';
@@ -17,6 +18,8 @@ import { DynamicClientRegistrationDto } from './oauth.types.js';
 
 @Controller()
 export class OAuth2Controller {
+  private readonly logger = new Logger(OAuth2Controller.name);
+
   constructor(
     private readonly oauth2Service: OAuth2Service,
     private readonly authService: AuthService,
@@ -24,6 +27,7 @@ export class OAuth2Controller {
 
   @Get('.well-known/oauth-authorization-server')
   getOAuthServerMetadata(@Req() req: Request) {
+    this.logger.log('GET /.well-known/oauth-authorization-server');
     const proto =
       req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
     const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:4000';
@@ -33,6 +37,7 @@ export class OAuth2Controller {
 
   @Get('.well-known/openid-configuration')
   getOpenIdConfiguration(@Req() req: Request) {
+    this.logger.log('GET /.well-known/openid-configuration');
     const proto =
       req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
     const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:4000';
@@ -42,6 +47,7 @@ export class OAuth2Controller {
 
   @Get('.well-known/oauth-protected-resource')
   getOAuthProtectedResourceMetadata(@Req() req: Request) {
+    this.logger.log('GET /.well-known/oauth-protected-resource');
     const proto =
       req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
     const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:4000';
@@ -52,7 +58,10 @@ export class OAuth2Controller {
   @Post('oauth/register')
   @HttpCode(HttpStatus.CREATED)
   registerDynamicClient(@Body() dto: DynamicClientRegistrationDto) {
-    return this.oauth2Service.registerClient(dto);
+    this.logger.log(`POST /oauth/register - Client registration request received: ${JSON.stringify(dto)}`);
+    const registered = this.oauth2Service.registerClient(dto);
+    this.logger.log(`Client registered successfully: client_id=${registered.client_id}`);
+    return registered;
   }
 
   @Get('oauth/authorize')
@@ -67,6 +76,9 @@ export class OAuth2Controller {
     @Query('resource') resource: string,
     @Res() res: Response,
   ) {
+    this.logger.log(
+      `GET /oauth/authorize - client_id=${clientId}, redirect_uri=${redirectUri}, response_type=${responseType}`,
+    );
     if (responseType !== 'code') {
       throw new BadRequestException(
         'OAuth 2.1 only supports response_type=code',
@@ -151,6 +163,9 @@ export class OAuth2Controller {
     @Body() body: Record<string, string>,
     @Res() res: Response,
   ) {
+    this.logger.log(
+      `POST /oauth/authorize/decision - client_id=${body.client_id}, email=${body.email}`,
+    );
     const {
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -195,6 +210,9 @@ export class OAuth2Controller {
     @Body() body: Record<string, string>,
     @Req() req: Request,
   ) {
+    this.logger.log(
+      `POST /oauth/token - client_id=${body.client_id || 'header'}, grant_type=${body.grant_type}`,
+    );
     let clientId = body.client_id;
     let clientSecret = body.client_secret;
 

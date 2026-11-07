@@ -23,6 +23,10 @@ describe('OAuth2Service (OAuth 2.1 with PKCE S256)', () => {
     });
 
     expect(dynamicClient.clientId).toBeDefined();
+    expect(dynamicClient.client_id).toBeDefined();
+    expect(dynamicClient.redirect_uris).toEqual([
+      'http://localhost:3000/oauth/callback',
+    ]);
     expect(oauth2Service.getClient(dynamicClient.clientId)).toBeDefined();
   });
 
